@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="description" content="Explore Chladni figures: an interactive motion laboratory for sound, nodal patterns, vibrating plates and generative sand simulations."/>
+<meta name="theme-color" content="#101719"/>
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="CHLADNI — Visible Resonance"/>
+<meta property="og:description" content="Discover the geometry of sound. Explore five interactive Chladni figures, change the vibration, and capture the patterns."/>
+<meta name="twitter:card" content="summary_large_image"/>
+<title>Chladni — Visible Resonance | Interactive Motion Laboratory</title>
+<style>
+:root{color-scheme:dark;--bg:#101719;--panel:#182225;--muted:#94a8ae;--ink:#e2e7e3;--gold:#e7c38d;--line:#304044}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 20%,#1d292b 0%,#0b1113 78%);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+.shell{width:min(1400px,calc(100vw - 36px));margin:0 auto;padding:24px 0 26px}
+.header{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:6px 4px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-size:24px;letter-spacing:.31em;font-weight:600}.tag{color:var(--muted);font-size:12px;letter-spacing:.13em;text-transform:uppercase}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;padding-top:22px}
+.stage{align-self:start;border:1px solid #36464a;background:#090f11;box-shadow:0 28px 70px #0008;border-radius:10px;overflow:hidden;position:relative;min-width:0}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
+.panel{display:flex;flex-direction:column;gap:20px}
+.group{background:#172124;border:1px solid #304146;border-radius:10px;padding:18px}
+.kicker{font-size:11px;letter-spacing:.20em;color:var(--muted);text-transform:uppercase;margin:0 0 12px}
+.mode{border:1px solid #43585c;display:flex;width:100%;align-items:center;gap:12px;background:transparent;color:var(--ink);text-align:left;border-radius:6px;padding:11px 12px;cursor:pointer;margin:6px 0;font:inherit}
+.mode.active{border-color:var(--gold);background:#e7c38d13}
+.mode .number{font-size:12px;color:var(--gold);width:22px;font-variant-numeric:tabular-nums}
+.mode small{display:block;color:var(--muted);font-size:11px}
+.control{margin:16px 0 5px}.control-head{display:flex;justify-content:space-between;font-size:12px;margin:0 0 10px}
+.value{font-variant-numeric:tabular-nums;color:var(--gold)}
+input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:11px 8px;cursor:pointer;border:1px solid #50646a;border-radius:6px;background:#202c30;color:var(--ink);font:inherit;font-size:12px}
+.btn.primary{color:#141a19;background:var(--gold);border-color:var(--gold);font-weight:600}
+.check{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-top:12px}
+.check input{accent-color:var(--gold)}
+.note{font-size:12px;color:var(--muted);line-height:1.55;margin:0}
+.footer{margin-top:19px;color:#7e969c;font-size:12px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.status{font-size:11px;color:var(--gold);min-height:17px;margin-top:10px}
+@media(max-width:960px){.main{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.group:last-child{grid-column:1/-1}}
+@media(max-width:600px){.shell{width:calc(100vw - 20px);padding-top:10px}.header{padding:4px 8px 14px}.brand{font-size:19px}.panel{display:block}.group{margin-bottom:10px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="header"><div class="brand">C H L A D N I</div><div class="tag">VISIBLE RESONANCE · INTERACTIVE MOTION LABORATORY</div></header>
+<div class="main">
+  <div class="stage"><canvas id="view" width="1280" height="720" aria-label="Animated Chladni plate with drifting grains of sand and emergent symmetrical nodal patterns"></canvas></div>
+  <aside class="panel">
+    <section class="group"><p class="kicker">01 / Select resonance</p><div id="modes"></div></section>
+    <section class="group"><p class="kicker">02 / Experiment</p>
+      <div class="control"><div class="control-head"><label for="excitation">Excitation / agitation</label><span class="value" id="excLabel">25%</span></div><input id="excitation" type="range" min="0" max="100" value="25"/></div>
+      <div class="control"><div class="control-head"><label for="grains">Sand grains</label><span class="value" id="grainLabel">12000</span></div><input id="grains" type="range" min="1000" max="24000" step="1000" value="12000"/></div>
+      <label class="check"><input type="checkbox" id="field"/>Reveal vibration field</label>
+      <label class="check"><input type="checkbox" id="auto"/>Automatically cycle modes</label>
+    </section>
+    <section class="group"><p class="kicker">03 / Capture</p>
+      <div class="btns"><button class="btn primary" id="pause">Pause</button><button class="btn" id="sound">Sound: Off</button><button class="btn" id="snapshot">Save PNG</button><button class="btn" id="record">Record 8 s</button></div>
+      <div class="status" id="status" aria-live="polite">Ready. Choose a mode to excite the plate.</div>
+    </section>
+    <section class="group"><p class="kicker">About the model</p><p class="note">The nodal figures use analytical modes of an ideal 30 cm, 1 mm steel square plate with <b>simply supported</b> boundaries. Sand motion is an illustrative, phenomenological transport simulation with the outer-edge attractor suppressed for visual clarity. Historical Chladni experiments generally use different supports and freer edges. Displayed frequencies are theoretical, not measured.</p></section>
+  </aside>
+</div>
+<div class="footer"><span>A STUDY OF EMERGENT GEOMETRY · STANDING WAVES / NODAL LINES / GRANULAR MATTER</span><span>STANDALONE · WORKS OFFLINE IN CHROME</span></div>
+</div>
+<script>
+(() => {
+'use strict';
+const W=1280,H=720,S=550,PX=365,PY=82,N=280,pi=Math.PI;
+const modes=[
+ {m:1,n:2,s:-1,name:'Diagonal',phrase:'THE FIRST DIVISION'},
+ {m:1,n:3,s:1,name:'Circle',phrase:'A HIDDEN SYMMETRY'},
+ {m:2,n:3,s:-1,name:'Curvature',phrase:'NODAL GEOMETRY'},
+ {m:2,n:4,s:1,name:'Lattice',phrase:'ORDER FROM VIBRATION'},
+ {m:3,n:5,s:1,name:'Rosette',phrase:'COMPLEXITY EMERGES'}
+];
+const E=200e9,nu=.30,rho=7850,h=.001,L=.30;
+const D=E*h*h*h/(12*(1-nu*nu));
+const hzFactor=pi/(2*L*L)*Math.sqrt(D/(rho*h));
+const $=s=>document.querySelector(s);
+const canvas=$('#view'),ctx=canvas.getContext('2d',{alpha:false});
+const pCanvas=document.createElement('canvas');pCanvas.width=S;pCanvas.height=S;
+const pc=pCanvas.getContext('2d');
+const modeBox=$('#modes');
+const nModes=modes.length;
+let modeIndex=0,paused=false,showField=false,auto=false,excitation=25,particles=[],mapping=null,fieldCanvas=null,shock=0;
+let audioCtx=null,osc=null,gain=null,recording=false,recorder=null,modeStart=performance.now(),lastTime=0;
+
+function hz(m){return hzFactor*(m.m*m.m+m.n*m.n)}
+function phi(x,y,m){const a=Math.sin(m.m*pi*x)*Math.sin(m.n*pi*y);return a+m.s*Math.sin(m.n*pi*x)*Math.sin(m.m*pi*y)}
+function fillGrains(num){particles=Array.from({length:num},()=>({x:.02+.96*Math.random(),y:.02+.96*Math.random(),vx:0,vy:0,shade:Math.random()}))}
+
+// Jump-flood nearest-nodal-point map: a GPU-style algorithm implemented in
+// small typed arrays. It makes particle lookup effectively O(1) each frame.
+function buildMap(m){
+ const size=N*N,field=new Float32Array(size);let max=0;
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const idx=y*N+x,p=phi(x/(N-1),y/(N-1),m);field[idx]=p;max=Math.max(max,Math.abs(p));
+ }
+ let nx=new Int16Array(size),ny=new Int16Array(size);
+ nx.fill(-1);ny.fill(-1);
+ const b=Math.ceil(N*.055);
+ for(let y=b;y<N-b;y++)for(let x=b;x<N-b;x++){
+  const i=y*N+x;if(Math.abs(field[i])<=max*.018){nx[i]=x;ny[i]=y}
+ }
+ const shifts=[128,64,32,16,8,4,2,1,1];
+ for(const shift of shifts){
+  const xn=nx.slice(),yn=ny.slice();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+   const at=y*N+x;let best=1e20,bx=nx[at],by=ny[at];
+   if(bx>=0)best=(bx-x)**2+(by-y)**2;
+   for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++){
+    const xx2=x+xx*shift,yy2=y+yy*shift;
+    if((!xx&&!yy)||xx2<0||yy2<0||xx2>=N||yy2>=N)continue;
+    const j=yy2*N+xx2,cx=nx[j],cy=ny[j];if(cx<0)continue;
+    const dist=(cx-x)**2+(cy-y)**2;
+    if(dist<best){best=dist;bx=cx;by=cy;}
+   }
+   xn[at]=bx;yn[at]=by;
+  }
+  nx=xn;ny=yn;
+ }
+ return {nx,ny,field};
+}
+function buildField(){
+ const c=document.createElement('canvas');c.width=N;c.height=N;const g=c.getContext('2d');
+ const image=g.createImageData(N,N),data=image.data;let max=1e-7;
+ for(let i=0;i<mapping.field.length;i++)max=Math.max(max,Math.abs(mapping.field[i]));
+ for(let i=0;i<mapping.field.length;i++){
+  const amp=Math.abs(mapping.field[i])/max;
+  data[i*4]=25+Math.floor(28*amp);data[i*4+1]=68+Math.floor(67*amp);
+  data[i*4+2]=82+Math.floor(86*amp);data[i*4+3]=Math.floor(100*amp);
+ }
+ g.putImageData(image,0,0);return c;
+}
+function changeMode(index){
+ modeIndex=(index+nModes)%nModes;
+ mapping=buildMap(modes[modeIndex]);fieldCanvas=buildField();modeStart=performance.now();shock=1;
+ for(const p of particles){p.x=Math.min(.98,Math.max(.02,p.x*.20+Math.random()*.80));p.y=Math.min(.98,Math.max(.02,p.y*.20+Math.random()*.80));p.vx=p.vy=0}
+ document.querySelectorAll('.mode').forEach((b,i)=>b.classList.toggle('active',i===modeIndex));
+ if(osc&&audioCtx){osc.frequency.setTargetAtTime(hz(modes[modeIndex]),audioCtx.currentTime,.08)}
+ $('#status').textContent=`Mode ${modeIndex+1} / ${nModes}: ${modes[modeIndex].name}.`;
+}
+function text(str,x,y,size=18,color='#cbd5d5',weight='normal',tracking=0){
+ ctx.fillStyle=color;ctx.font=`${weight} ${size}px system-ui, sans-serif`;
+ if(!tracking)ctx.fillText(str,x,y);
+ else {let px=x;for(const ch of str){ctx.fillText(ch,px,y);px+=ctx.measureText(ch).width+tracking}}
+}
+function initModes(){
+ modes.forEach((m,i)=>{
+  const b=document.createElement('button');b.className='mode';b.innerHTML=`<span class="number">0${i+1}</span><span>${m.name}<small>${hz(m).toFixed(1)} Hz · (${m.m}, ${m.n})</small></span>`;
+  b.onclick=()=>changeMode(i);modeBox.append(b);
+ });
+}
+function update(dt){
+ const speed=Math.min(2.0,dt/16.67);
+ shock*=Math.pow(.88,speed);
+ const jitter=(.00005+excitation*.000006)+shock*.004;
+ for(let i=0;i<particles.length;i++){
+  const p=particles[i];let x=Math.min(N-1,Math.max(0,Math.floor(p.x*(N-1)))),y=Math.min(N-1,Math.max(0,Math.floor(p.y*(N-1))));
+  const j=y*N+x;
+  const tx=mapping.nx[j]/(N-1),ty=mapping.ny[j]/(N-1);
+  p.vx=p.vx*.65+(tx-p.x)*.05;p.vy=p.vy*.65+(ty-p.y)*.05;
+  p.x=Math.max(.01,Math.min(.99,p.x+(p.vx+(Math.random()-.5)*jitter)*speed));
+  p.y=Math.max(.01,Math.min(.99,p.y+(p.vy+(Math.random()-.5)*jitter)*speed));
+ }
+}
+function paint(now){
+ const mode=modes[modeIndex];ctx.clearRect(0,0,W,H);ctx.fillStyle='#0d1517';ctx.fillRect(0,0,W,H);
+ const grad=ctx.createRadialGradient(660,300,80,660,300,870);grad.addColorStop(0,'#1c282a');grad.addColorStop(1,'#0d1214');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#080d0d';ctx.fillRect(PX-15,PY-15,S+30,S+30);
+ ctx.fillStyle='#526466';ctx.fillRect(PX-5,PY-5,S+10,S+10);
+ const plate=ctx.createLinearGradient(PX,PY,PX+S,PY+S);plate.addColorStop(0,'#253236');plate.addColorStop(.6,'#1d292c');plate.addColorStop(1,'#131d21');
+ ctx.fillStyle=plate;ctx.fillRect(PX,PY,S,S);
+ ctx.strokeStyle='#334146';ctx.lineWidth=.7;
+ for(let i=1;i<10;i++){const a=i*S/10;ctx.beginPath();ctx.moveTo(PX+a,PY+5);ctx.lineTo(PX+a,PY+S-5);ctx.moveTo(PX+5,PY+a);ctx.lineTo(PX+S-5,PY+a);ctx.stroke()}
+ if(showField&&fieldCanvas)ctx.drawImage(fieldCanvas,PX,PY,S,S);
+ ctx.fillStyle='#dfbc83';
+ // Grain illumination is deliberately subtle: the geometry is made of grains,
+ // not continuous glowing mathematical curves.
+ for(let i=0;i<particles.length;i++){
+  const p=particles[i],x=PX+p.x*S,y=PY+p.y*S;
+  ctx.globalAlpha=.57+.38*p.shade;ctx.fillRect(x,y,p.shade>.86?1.7:1.15,p.shade>.86?1.7:1.15);
+ }
+ ctx.globalAlpha=1;ctx.strokeStyle='#758d8f';ctx.lineWidth=1;ctx.strokeRect(PX+.5,PY+.5,S-1,S-1);
+ text('C H L A D N I',47,79,25,'#e1e4df','600',1.2);
+ ctx.strokeStyle='#53666a';ctx.beginPath();ctx.moveTo(47,103);ctx.lineTo(297,103);ctx.stroke();
+ text('VISIBLE',47,160,38,'#e7e8e5','600');text('RESONANCE',47,201,35,'#e7e8e5','600');
+ text('An experiment in',48,241,15,'#99b0b4');text('emergent geometry.',48,260,15,'#99b0b4');
+ text('VIBRATION',47,397,16,'#95acb0');text('+  GRANULAR MATTER',47,430,16,'#e2c391');text('=  VISIBLE STRUCTURE',47,460,16,'#e2c391');
+ text('MODAL STUDY / 01',1000,84,14,'#a7bcbd');ctx.beginPath();ctx.moveTo(1000,105);ctx.lineTo(1230,105);ctx.stroke();
+ text('RESONANT MODE',1000,155,16,'#a3b9bb');text(`${String(modeIndex+1).padStart(2,'0')} / 05`,1000,198,37,'#f2f0e9','600');
+ text(mode.name.toUpperCase(),1000,236,21,'#d9dfdb');text(hz(mode).toFixed(1)+' Hz',1000,326,37,'#e7c38d','600');
+ text('THEORETICAL',1001,351,13,'#91a4aa');text(`MODE   (${mode.m}, ${mode.n})`,1000,388,17,'#afc1c1');
+ text('SYMMETRY   '+(mode.s>0?'+':'-'),1000,414,14,'#7fa0a4');
+ ctx.strokeStyle='#9bb7b9';ctx.lineWidth=1;ctx.beginPath();
+ for(let x=1002;x<=1230;x+=2){let xx=(x-1002)/228,env=Math.pow(Math.sin(Math.PI*xx),.65);let yy=450+Math.sin(xx*2*Math.PI*(2+mode.m+mode.n)*.55-now*.002)*9*env;
+  if(x===1002)ctx.moveTo(x,yy);else ctx.lineTo(x,yy)}ctx.stroke();
+ text(mode.phrase,1000,498,14,'#a9c0c0');text('SIMULATED PLATE',1000,559,14,'#8da9ac');
+ text('30 cm STEEL  /  1 mm',1000,586,16,'#c6d3d0');text('IDEALIZED BOUNDARY',1000,606,12,'#86a1a5');text('SIMPLY SUPPORTED',1000,624,12,'#86a1a5');
+ ctx.strokeStyle='#4d6367';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(47,669);ctx.lineTo(1230,669);ctx.stroke();
+ text('CHLADNI / SOUND MADE VISIBLE',47,698,12,'#93a9ae');text('MODEL-BASED STUDY · NOT A RECORDED EXPERIMENT',830,698,11,'#779095');
+}
+function frame(now){const dt=lastTime?Math.min(50,now-lastTime):16.7;lastTime=now;
+ if(auto&&now-modeStart>5500)changeMode(modeIndex+1);
+ if(!paused)update(dt);
+ paint(now);requestAnimationFrame(frame);
+}
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
+$('#pause').onclick=()=>{paused=!paused;$('#pause').textContent=paused?'Resume':'Pause';$('#status').textContent=paused?'Simulation paused.':'Simulation running.'};
+$('#sound').onclick=async()=>{
+ if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();osc=audioCtx.createOscillator();gain=audioCtx.createGain();osc.type='sine';osc.frequency.value=hz(modes[modeIndex]);gain.gain.value=.035;osc.connect(gain);gain.connect(audioCtx.destination);osc.start();$('#sound').textContent='Sound: On';}
+ else if(audioCtx.state==='running'){await audioCtx.suspend();$('#sound').textContent='Sound: Off'}
+ else{await audioCtx.resume();$('#sound').textContent='Sound: On'};
+};
+$('#snapshot').onclick=()=>canvas.toBlob(b=>downloadBlob(b,`chladni-mode-${modeIndex+1}.png`),'image/png');
+$('#field').onchange=e=>showField=e.target.checked;
+$('#auto').onchange=e=>{auto=e.target.checked;modeStart=performance.now()};
+$('#excitation').oninput=e=>{excitation=+e.target.value;$('#excLabel').textContent=excitation+'%'};
+$('#grains').oninput=e=>{fillGrains(+e.target.value);$('#grainLabel').textContent=particles.length.toLocaleString()};
+$('#record').onclick=()=>{
+ if(recording){recorder?.stop();return}
+ if(typeof MediaRecorder==='undefined'||!canvas.captureStream){$('#status').textContent='Recording is not supported by this browser.';return}
+ const stream=canvas.captureStream(30);
+ const format=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+ if(!format){$('#status').textContent='WebM recording is unavailable here.';return}
+ const chunks=[];recorder=new MediaRecorder(stream,{mimeType:format,videoBitsPerSecond:6500000});
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ recorder.onstop=()=>{downloadBlob(new Blob(chunks,{type:format}),'chladni-live-capture.webm');stream.getTracks().forEach(t=>t.stop());recording=false;$('#record').textContent='Record 8 s';$('#status').textContent='Video captured (silent WebM).'};
+ recorder.start();recording=true;$('#record').textContent='Stop recording';$('#status').textContent='Recording 8 seconds of canvas motion…';
+ setTimeout(()=>{if(recording&&recorder.state==='recording')recorder.stop()},8000);
+};
+initModes();fillGrains(12000);changeMode(0);requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
