@@ -16,3 +16,12 @@ An interactive motion laboratory inspired by the Chladni plate experiment. Explo
 
 
 The source files are public if published in a public GitHub repository. The repository does not include a license. If you want others to reuse or modify the code, choose and add a suitable open-source license separately.
+
+
+## Watch the Chladni Motion Study
+
+[▶ Watch the animation](https://maqsoodk.github.io/chladni-explorer/chladni_motion_study.mp4)
+
+## Explore the Interactive Laboratory
+
+[Launch Chladni Explorer](https://maqsoodk.github.io/chladni-explorer/)
